@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Andrukas8"
 #property link      "https://github.com/Andrukas8/AR_Three_Line_Strike_Indicator"
-#property version   "1.01"
+#property version   "1.02"
 #property indicator_chart_window
 
 #property indicator_chart_window
@@ -26,7 +26,8 @@
 
 // -- indicator inputs
 input double ToleranceOpenPercent = 0; // Engulfing Range Tolerance Open %
-input double ToleranceClosePercent = 0; // Engulfing Range Tolerance Close %
+input double ToleranceClosePercent = 30; // Engulfing Range Tolerance Close %
+input bool EngulfingModeStrict = false; // Strict mode
 
 //--- indicator buffers
 double BufferUP[];
@@ -51,7 +52,7 @@ int OnInit()
 //--- setting buffer arrays as timeseries
    ArraySetAsSeries(BufferUP,true);
    ArraySetAsSeries(BufferDN,true);
-//---
+//---   
    return(INIT_SUCCEEDED);
   }
 //+------------------------------------------------------------------+
@@ -71,6 +72,7 @@ int OnCalculate(const int rates_total,
 //--- Checking the minimum number of bars for calculation
   
    if(rates_total<3) return 0;
+   
 //--- Checking and calculating the number of bars
    int limit=rates_total-prev_calculated;
    if(limit>1)
@@ -87,7 +89,7 @@ int OnCalculate(const int rates_total,
 
   double ToleranceOpenCoef = ToleranceOpenPercent / 100;
   double ToleranceCloseCoef = ToleranceClosePercent / 100;
-     
+  
   for(int i=limit; i>=0 && !IsStopped(); i--)
      {
       bool strike_up=false;
@@ -96,49 +98,69 @@ int OnCalculate(const int rates_total,
       // Strike UP
       double closeUP = close[i] + (close[i] - open[i]) * ToleranceCloseCoef;
       double openUP = open[i] - (close[i] - open[i]) * ToleranceCloseCoef;
+      
+            
       if(closeUP >= MathMax(close[i+1], MathMax(close[i+2], close[i+3])) &&
          closeUP >= MathMax(open[i+1], MathMax(open[i+2], open[i+3])) &&
          closeUP >= MathMin(open[i+1], MathMin(open[i+2], open[i+3])) &&
          openUP <= MathMin(close[i+1], MathMin(close[i+2], close[i+3])) &&
          openUP <= MathMax(close[i+1], MathMax(close[i+2], close[i+3])) &&
          openUP <= MathMin(open[i+1], MathMin(open[i+2], open[i+3])) &&
-         openUP <= closeUP &&
-         open[i+1] >= close[i+1] &&
-         open[i+2] >= close[i+2] &&
-         open[i+3] >= close[i+3])
-      {      
-       strike_up = true;
+         openUP <= MathMax(open[i+1], MathMax(open[i+2], open[i+3])) &&
+         openUP <= closeUP)
+      {
+         strike_up = true;
+         
+         // checking if strict rule is on
+         if(EngulfingModeStrict && !(open[i+1] >= close[i+1] && open[i+2] >= close[i+2] && open[i+3] >= close[i+3]))
+           {
+             strike_up = false;
+           }
+                         
       }
       
       // Strike DN
       double closeDN = close[i] - (open[i] - close[i]) * ToleranceCloseCoef;
       double openDN = open[i] + (open[i] - close[i]) * ToleranceCloseCoef;
+      
       if(closeDN <= MathMax(close[i+1], MathMax(close[i+2], close[i+3])) &&
          closeDN <= MathMax(open[i+1], MathMax(open[i+2], open[i+3])) &&
          closeDN <= MathMin(open[i+1], MathMin(open[i+2], open[i+3])) &&
          openDN >= MathMin(close[i+1], MathMin(close[i+2], close[i+3])) &&
          openDN >= MathMax(close[i+1], MathMax(close[i+2], close[i+3])) &&
          openDN >= MathMin(open[i+1], MathMin(open[i+2], open[i+3])) &&
-         openDN >= closeDN &&
-         open[i+1] <= close[i+1] &&
-         open[i+2] <= close[i+2] &&
-         open[i+3] <= close[i+3])
-      {      
-       strike_dn = true;
+         openDN >= MathMax(open[i+1], MathMax(open[i+2], open[i+3])) &&
+         openDN >= closeDN)
+      {
+        strike_dn = true;
+        
+        // checking if strict rule is on
+        if(EngulfingModeStrict && !(open[i+1] <= close[i+1] && open[i+2] <= close[i+2] && open[i+3] <= close[i+3]))
+           {
+             strike_dn = false;
+           }
+            
       }
             
       //--- strikes
       
-      if(strike_up)
-         BufferUP[i]=close[i];
+      if(strike_up) {
+         BufferUP[i]=close[i];      
+      }
+      
       else
          BufferUP[i]=EMPTY_VALUE;
-      if(strike_dn)
-         BufferDN[i]=close[i];
+         
+      if(strike_dn){
+         BufferDN[i]=close[i];         
+      }
+         
       else
          BufferDN[i]=EMPTY_VALUE;
      }
-//--- return value of prev_calculated for next call
+     
+//--- return value of prev_calculated for next call     
    return(rates_total);
+
   }
 //+------------------------------------------------------------------+
