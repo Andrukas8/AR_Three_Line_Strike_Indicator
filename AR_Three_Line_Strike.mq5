@@ -98,8 +98,7 @@ int OnCalculate(const int rates_total,
       // Strike UP
       double closeUP = close[i] + (close[i] - open[i]) * ToleranceCloseCoef;
       double openUP = open[i] - (close[i] - open[i]) * ToleranceCloseCoef;
-      
-            
+                  
       if(closeUP >= MathMax(close[i+1], MathMax(close[i+2], close[i+3])) &&
          closeUP >= MathMax(open[i+1], MathMax(open[i+2], open[i+3])) &&
          closeUP >= MathMin(open[i+1], MathMin(open[i+2], open[i+3])) &&
@@ -115,8 +114,7 @@ int OnCalculate(const int rates_total,
          if(EngulfingModeStrict && !(open[i+1] >= close[i+1] && open[i+2] >= close[i+2] && open[i+3] >= close[i+3]))
            {
              strike_up = false;
-           }
-                         
+           }                         
       }
       
       // Strike DN
@@ -138,10 +136,22 @@ int OnCalculate(const int rates_total,
         if(EngulfingModeStrict && !(open[i+1] <= close[i+1] && open[i+2] <= close[i+2] && open[i+3] <= close[i+3]))
            {
              strike_dn = false;
-           }
-            
+           }            
       }
-            
+                                    
+      // --- checking that the engulfed candles are shorter than the engulfing candle
+      
+      double mainCandleBodyLength = MathAbs(open[i] - close[i]);
+      double firstCandleBodyLength = MathAbs(open[i+1] - close[i+1]);
+      double secondCandleBodyLength = MathAbs(open[i+2] - close[i+2]);
+      double thirdCandleBodyLength = MathAbs(open[i+3] - close[i+3]);
+      
+      if(mainCandleBodyLength < firstCandleBodyLength || mainCandleBodyLength < secondCandleBodyLength || mainCandleBodyLength < thirdCandleBodyLength)
+        {
+         strike_up = false;
+         strike_dn = false;         
+        }      
+      
       //--- strikes
       
       if(strike_up) {
