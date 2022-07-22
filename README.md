@@ -1,5 +1,7 @@
 # AR_Three_Line_Strike_Indicator
 
+[![Support Ukraine Badge](https://bit.ly/support-ukraine-now)](https://github.com/support-ukraine/support-ukraine)
+
 MQL5 indicator that shows Three Line Strike candle patterns
 
 Not a financial advice. Trade at your own risk. Author is not reponsible for the correctness of the indicator.
